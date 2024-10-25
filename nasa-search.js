@@ -1,11 +1,14 @@
-import { LitElement, html, css } from 'lit';
+import { LitElement, html, css } from "lit";
 import "./nasa-image.js";
-export class NasaSearch extends LitElement {
+import { DDDSuper } from "@haxtheweb/d-d-d/d-d-d.js";
+import { I18NMixin } from "@haxtheweb/i18n-manager/lib/I18NMixin.js";
+
+export class NasaSearch extends DDDSuper(I18NMixin(LitElement)) {
   static get properties() {
     return {
       title: { type: String },
       loading: { type: Boolean, reflect: true },
-      items: { type: Array, },
+      items: { type: Array },
       value: { type: String },
     };
   }
@@ -24,13 +27,13 @@ export class NasaSearch extends LitElement {
         visibility: visible;
         height: 100%;
         opacity: 1;
-        transition-delay: .5s;
-        transition: .5s all ease-in-out;
+        transition-delay: 0.5s;
+        transition: 0.5s all ease-in-out;
       }
 
       details {
-        margin: 16px;
-        padding: 16px;
+        margin: var(--ddd-spacing-4);
+        padding: var(--ddd-spacing-4);
         background-color: blue;
       }
       summary {
@@ -50,62 +53,71 @@ export class NasaSearch extends LitElement {
   constructor() {
     super();
     this.value = null;
-    this.title = '';
+    this.title = "";
     this.loading = false;
     this.items = [];
   }
 
   render() {
     return html`
-    <h2>${this.title}</h2>
-    <details open>
-      <summary>Search inputs</summary>
-      <div>
-        <input id="input" placeholder="Search NASA images" @input="${this.inputChanged}" />
+      <h2>${this.title}</h2>
+      <details open>
+        <summary>Search inputs</summary>
+        <div>
+          <input
+            id="input"
+            placeholder="Search NASA images"
+            @input="${this.inputChanged}"
+          />
+        </div>
+      </details>
+      <div class="results">
+        ${this.items.map(
+          (item, index) => html`
+            <nasa-image
+              source="${item.links[0].href}"
+              title="${item.data[0].title}"
+              alt="Image could not be loaded"
+              owner="${item.data[0].secondary_creator}"
+            ></nasa-image>
+          `
+        )}
       </div>
-    </details>
-    <div class="results">
-      ${this.items.map((item, index) => html`
-      <nasa-image
-        source="${item.links[0].href}"
-        title="${item.data[0].title}"
-      ></nasa-image>
-      `)}
-    </div>
     `;
   }
 
   inputChanged(e) {
-    this.value = this.shadowRoot.querySelector('#input').value;
+    this.value = this.shadowRoot.querySelector("#input").value;
   }
   // life cycle will run when anything defined in `properties` is modified
   updated(changedProperties) {
     // see if value changes from user input and is not empty
-    if (changedProperties.has('value') && this.value) {
+    if (changedProperties.has("value") && this.value) {
       this.updateResults(this.value);
-    }
-    else if (changedProperties.has('value') && !this.value) {
+    } else if (changedProperties.has("value") && !this.value) {
       this.items = [];
     }
     // @debugging purposes only
-    if (changedProperties.has('items') && this.items.length > 0) {
+    if (changedProperties.has("items") && this.items.length > 0) {
       console.log(this.items);
     }
   }
 
   updateResults(value) {
     this.loading = true;
-    fetch(`https://images-api.nasa.gov/search?media_type=image&q=${value}`).then(d => d.ok ? d.json(): {}).then(data => {
-      if (data.collection) {
-        this.items = [];
-        this.items = data.collection.items;
-        this.loading = false;
-      }  
-    });
+    fetch(`https://images-api.nasa.gov/search?media_type=image&q=${value}`)
+      .then((d) => (d.ok ? d.json() : {}))
+      .then((data) => {
+        if (data.collection) {
+          this.items = [];
+          this.items = data.collection.items;
+          this.loading = false;
+        }
+      });
   }
 
   static get tag() {
-    return 'nasa-search';
+    return "nasa-search";
   }
 }
 customElements.define(NasaSearch.tag, NasaSearch);
